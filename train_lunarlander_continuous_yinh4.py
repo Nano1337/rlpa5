@@ -5,13 +5,31 @@ import matplotlib.pyplot as plt
 import time
 from datetime import datetime
 
+# Import required libraries
+# gym: OpenAI Gym for reinforcement learning environments
+# numpy: For numerical computations
+# ddpg_yinh4: Custom implementation of Deep Deterministic Policy Gradient algorithm
+# matplotlib: For plotting training results
+# time, datetime: For tracking training duration and timestamping saved files
+
 # Initialize environment
+# - LunarLanderContinuous-v2 is a continuous action space environment
+# - RecordEpisodeStatistics wrapper automatically tracks episode rewards
+# - state_dim: dimension of observation space (8 values including position, velocity, angle, etc.)
+# - action_dim: dimension of action space (2 values: main engine thrust and side engines)
 env = gym.make('LunarLanderContinuous-v2')
 env = gym.wrappers.RecordEpisodeStatistics(env)
 state_dim = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
 
 # Initialize agent
+# - buffer_size: maximum size of replay buffer for experience replay
+# - batch_size: number of samples used for each training iteration
+# - gamma: discount factor for future rewards (0.99 = long-term focused)
+# - tau: soft update coefficient for target networks
+# - actor_lr: learning rate for the actor network
+# - critic_lr: learning rate for the critic network
+# - noise_std: standard deviation of exploration noise
 agent = DDPGAgent(
     state_dim=state_dim,
     action_dim=action_dim,
@@ -24,7 +42,12 @@ agent = DDPGAgent(
     noise_std=0.1,
 )
 
-# Training parameters
+# Define training parameters
+# - max_episodes: maximum number of training episodes
+# - max_steps: maximum steps per episode
+# - min_buffer_size: minimum experiences needed before training starts
+# - start_steps: initial steps for random action exploration
+# - Various lists to track training metrics
 max_episodes = 2000
 max_steps = 1000000
 min_buffer_size = 1000
@@ -37,7 +60,18 @@ actor_losses = []
 # Start training timer
 start_time = time.time()
 
-# Training loop
+# Main training loop
+# For each episode:
+# 1. Reset environment and initialize episode tracking variables
+# 2. For each step in episode:
+#    - Select action using current policy
+#    - Execute action in environment
+#    - Store experience in replay buffer
+#    - Train agent if enough experiences collected
+#    - Update episode metrics
+# 3. Store episode results and calculate running averages
+# 4. Check if environment is solved (avg reward >= 200)
+# 5. Print progress every 10 episodes
 for episode in range(max_episodes):
     state = env.reset()
     if isinstance(state, tuple):  # Handle new gym return type
