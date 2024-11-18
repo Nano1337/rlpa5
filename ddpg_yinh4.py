@@ -5,7 +5,7 @@ import torch.optim as optim
 from collections import deque
 import random
 
-# Actor Network: Implements the deterministic policy μ(s|θμ)
+# Actor Network: Implements the deterministic policy
 # Maps states to specific actions rather than probability distributions
 class Actor(nn.Module):
     def __init__(self, input_state, output_action):
@@ -21,7 +21,7 @@ class Actor(nn.Module):
         x = torch.tanh(self.layer3(x))
         return x
 
-# Critic Network: Implements the action-value function Q(s,a|θQ)
+# Critic Network: Implements the action-value function Q
 # Estimates Q-value for state-action pairs to evaluate the actor's policy
 class Critic(nn.Module):
     def __init__(self, input_state, output_action):
@@ -134,25 +134,25 @@ class DDPGAgent:
         states, actions, next_states, rewards, dones = self.replay_buffer.sample(self.batch_size)
         
         # Step 2: Compute target Q-value:
-        # y = r + γ * Q'(s_{t+1}, μ'(s_{t+1}))
-        # Where Q' is target critic and μ' is target actor
+        # y = r + gamma * Q(next_state, next_action)
+        # Where Q is target critic and next_action is from target actor
         with torch.no_grad():
             next_actions = self.actor_target(next_states)
             target_Q = self.critic_target(next_states, next_actions)
             target_Q = rewards + (1 - dones) * self.gamma * target_Q
         
         # Step 3: Update Critic
-        # Minimize: L = 1/N Σ(y - Q(s_t, a_t))²
+        # Minimize loss between target and current Q values
         current_Q = self.critic(states, actions)
         critic_loss = nn.MSELoss()(current_Q, target_Q)
         
         # Step 4: Update Actor using policy gradient
-        # Maximize: J = 1/N Σ Q(s, μ(s))
-        # Equivalent to minimizing: -J
+        # Maximize Q values for actor's actions
+        # Equivalent to minimizing negative Q values
         actor_loss = -self.critic(states, self.actor(states)).mean()
         
         # Step 5: Soft update target networks
-        # θ_target = τ*θ_current + (1-τ)*θ_target
+        # Blend target networks towards current networks
         self._update_target_networks()
         
         # Additional: Decay learning rates and exploration noise over time
